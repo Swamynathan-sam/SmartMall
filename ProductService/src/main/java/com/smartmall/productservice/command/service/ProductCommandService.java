@@ -1,35 +1,52 @@
 package com.smartmall.productservice.command.service;
 
+import org.springframework.stereotype.Service;
+
+import com.smartmall.productservice.command.entity.Category;
 import com.smartmall.productservice.command.entity.Product;
 import com.smartmall.productservice.command.entity.Review;
 import com.smartmall.productservice.command.producer.ProductEventProducer;
-
+import com.smartmall.productservice.command.repository.CategoryRepository;
 import com.smartmall.productservice.command.repository.ProductRepository;
-import com.smartmall.productservice.command.repository.ReviewRepository;
 import com.smartmall.productservice.common.dto.ReviewRequest;
 import com.smartmall.productservice.common.event.ProductCreatedEvent;
+import com.smartmall.productservice.common.event.ProductUpdatedEvent;
+import com.smartmall.productservice.common.event.ReviewAddedEvent;
 
 import lombok.RequiredArgsConstructor;
-
-import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
 public class ProductCommandService {
 
     private final ProductRepository repository;
+    
+    private final CategoryRepository categoryRepository;
 
     private final ProductEventProducer producer;
-    
-    private final ReviewRepository reviewRepository;
 
     public Product createProduct(Product product) {
+    	
+    	 if(product.getCategory() != null){
+
+    	        Category category =
+    	                categoryRepository.findById(
+    	                        product.getCategory().getId())
+    	                .orElseThrow(() ->
+    	                        new RuntimeException(
+    	                                "Category not found"));
+
+    	        product.setCategory(category);
+    	    }
+    	
+    	product.setAverageRating(0.0);
 
         Product saved = repository.save(product);
 
         ProductCreatedEvent event =
                 new ProductCreatedEvent(
-                        saved.getId(),
+                        //saved.getId(),
+                		saved.getProductCode(),
                         saved.getName(),
                         saved.getDescription(),
                         saved.getPrice(),
@@ -42,11 +59,11 @@ public class ProductCommandService {
     }
     
     public Product updateProduct(
-            Long id,
+            String productCode,
             Product updatedProduct) {
 
         Product existing =
-                repository.findById(id)
+                repository.findByProductCode(productCode)
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Product not found"));
@@ -61,18 +78,30 @@ public class ProductCommandService {
 
         existing.setQuantity(
                 updatedProduct.getQuantity());
+        
+        if (updatedProduct.getCategory() != null) {
+
+            Category category =
+                    categoryRepository.findById(
+                            updatedProduct.getCategory().getId())
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Category not found"));
+
+            existing.setCategory(category);
+        }
 
         Product saved =
                 repository.save(existing);
 
-        ProductCreatedEvent event =
-                new ProductCreatedEvent(
-                        saved.getId(),
+        ProductUpdatedEvent event =
+                new ProductUpdatedEvent(
+                        //saved.getId(),
+                		saved.getProductCode(),
                         saved.getName(),
                         saved.getDescription(),
                         saved.getPrice(),
-                        saved.getQuantity(),
-                        saved.getAverageRating());
+                        saved.getQuantity());
 
         producer.publish(event);
 
@@ -80,11 +109,11 @@ public class ProductCommandService {
     }
     
     public Product addReview(
-            Long productId,
+            String productCode,
             ReviewRequest request) {
 
         Product product =
-                repository.findById(productId)
+                repository.findByProductCode(productCode)
                         .orElseThrow(() ->
                                 new RuntimeException(
                                         "Product not found"));
@@ -101,8 +130,6 @@ public class ProductCommandService {
 
         review.setProduct(product);
 
-        reviewRepository.save(review);
-
         product.getReviews().add(review);
 
         double average =
@@ -117,17 +144,27 @@ public class ProductCommandService {
         Product saved =
                 repository.save(product);
 
-        ProductCreatedEvent event =
-                new ProductCreatedEvent(
-                        saved.getId(),
-                        saved.getName(),
-                        saved.getDescription(),
-                        saved.getPrice(),
-                        saved.getQuantity(),
-                        saved.getAverageRating());
+        ReviewAddedEvent event =
+                new ReviewAddedEvent(
+                        //saved.getId(),
+                		saved.getProductCode(),
+                		request.getRating(),
+                		request.getComment(),
+                		request.getUsername(),
+                		saved.getAverageRating());
 
         producer.publish(event);
 
         return saved;
+    }
+    
+    public Product getProductByCode(
+            String productCode) {
+
+        return repository.findByProductCode(
+                productCode)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Product not found"));
     }
 }

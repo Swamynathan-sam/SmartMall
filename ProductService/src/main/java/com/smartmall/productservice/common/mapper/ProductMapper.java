@@ -1,5 +1,6 @@
 package com.smartmall.productservice.common.mapper;
 
+import java.util.Collections;
 import java.util.List;
 
 import com.smartmall.productservice.command.entity.Product;
@@ -14,28 +15,43 @@ public class ProductMapper {
         ProductResponse response =
                 new ProductResponse();
 
-        response.setId(product.getId());
-        response.setName(product.getName());
-        response.setDescription(product.getDescription());
-        response.setPrice(product.getPrice());
+        response.setId(
+                product.getId());
+
+        response.setProductCode(
+                product.getProductCode());
+
+        response.setName(
+                product.getName());
+
+        response.setDescription(
+                product.getDescription());
+
+        response.setPrice(
+                product.getPrice());
+
+        response.setQuantity(
+                product.getQuantity());
+
         response.setAverageRating(
                 product.getAverageRating());
 
         if(product.getCategory() != null) {
+
             response.setCategoryName(
                     product.getCategory().getName());
         }
-        
-        if(product.getImages() != null) {
 
-            List<String> imageUrls =
-                    product.getImages()
-                            .stream()
-                            .map(ProductImage::getImageUrl)
-                            .toList();
+        List<String> imageUrls =
+                product.getImages() != null
+                ? product.getImages()
+                    .stream()
+                    .map(ProductImage::getImageUrl)
+                    .toList()
+                : Collections.emptyList();
 
-            response.setImages(imageUrls);
-        }
+        response.setImages(
+                imageUrls);
 
         return response;
     }

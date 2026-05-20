@@ -1,14 +1,11 @@
 package com.smartmall.productservice.command.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.*;
+import lombok.*;
 @Entity
 @Getter
 @Setter
@@ -20,5 +17,10 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(unique=true,nullable=false)
     private String name;
+    
+    @OneToMany(mappedBy = "category")
+    @JsonManagedReference("category-product")
+    private List<Product> products;
 }

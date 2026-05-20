@@ -8,7 +8,8 @@ import lombok.*;
 @AllArgsConstructor
 public class ProductUpdatedEvent {
 
-    private Long id;
+    //private Long id;
+	private String productCode;
 
     private String name;
 

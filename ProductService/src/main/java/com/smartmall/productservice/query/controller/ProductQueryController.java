@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.smartmall.productservice.command.entity.Product;
+import com.smartmall.productservice.common.dto.ProductResponse;
+import com.smartmall.productservice.common.mapper.ProductMapper;
 import com.smartmall.productservice.query.service.ProductQueryService;
 
 import lombok.RequiredArgsConstructor;
@@ -20,11 +22,14 @@ public class ProductQueryController {
 
     private final ProductQueryService service;
 
-    @GetMapping("/{id}")
-    public Object getProduct(
-            @PathVariable Long id) {
-
-        return service.getProduct(id);
+    @GetMapping("/{productCode}")
+    public ProductResponse getProduct(
+            @PathVariable String productCode) {
+        Product product =
+                service.getProductByCode(
+                        productCode);
+        return ProductMapper.mapToResponse(
+                product);
     }
 
     @GetMapping("/search")

@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 public class ReviewRequest {
 
-    private int rating;
+    private Integer rating;
 
     private String comment;
 

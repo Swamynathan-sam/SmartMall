@@ -8,7 +8,7 @@ import lombok.*;
 @AllArgsConstructor
 public class ReviewAddedEvent {
 
-    private Long productId;
+    private String productCode;
 
     private int rating;
 

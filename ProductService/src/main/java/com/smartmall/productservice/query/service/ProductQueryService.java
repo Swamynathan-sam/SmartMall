@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class ProductQueryService {
 
 
-private final RedisTemplate<String, Object> redisTemplate;
+private final RedisTemplate<String, Product> redisTemplate;
 
 private final ProductRepository repository;
 
@@ -37,6 +37,32 @@ public Product getProduct(Long id) {
 
     redisTemplate.opsForValue()
             .set("product:" + id, product);
+
+    return product;
+}
+
+public Product getProductByCode(
+        String productCode) {
+
+    Product cachedProduct =
+            redisTemplate.opsForValue()
+                    .get("productCode:" + productCode);
+
+    if (cachedProduct != null) {
+        return cachedProduct;
+    }
+
+    Product product =
+            repository.findByProductCode(
+                    productCode)
+            .orElseThrow(() ->
+                    new RuntimeException(
+                            "Product not found"));
+
+    redisTemplate.opsForValue()
+            .set(
+                    "productCode:" + productCode,
+                    product);
 
     return product;
 }

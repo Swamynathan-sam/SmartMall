@@ -1,10 +1,27 @@
 package com.smartmall.productservice.command.entity;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import jakarta.persistence.*;
-import lombok.*;
-
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
@@ -17,33 +34,53 @@ public class Product {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+    
+    @Column(unique = true, nullable= false)
+    private String productCode;
 
     private String name;
 
     @Column(length = 2000)
     private String description;
 
-    private double price;
+    private Double price;
 
-    private int quantity;
+    private Integer quantity;
 
-    private double averageRating;
+    @Column(nullable = false)
+    private Double averageRating =0.0;
 
     @ManyToOne
     @JoinColumn(name = "category_id")
+    @JsonBackReference("category-product")
     private Category category;
 
     @OneToMany(
             mappedBy = "product",
             cascade = CascadeType.ALL
     )
-    @JsonManagedReference
-    private List<ProductImage> images;
+    @JsonManagedReference("product-images")
+    private List<ProductImage> images = new ArrayList<>();
 
     @OneToMany(
             mappedBy = "product",
-            cascade = CascadeType.ALL
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
     )
-    @JsonManagedReference
-    private List<Review> reviews;
+    @JsonManagedReference("product-reviews")
+    private List<Review> reviews = new ArrayList<>();
+    
+    @PrePersist
+    public void generateProductCode() {
+
+        if (this.productCode == null) {
+
+            this.productCode =
+                    "PRD-" +
+                    UUID.randomUUID()
+                            .toString()
+                            .substring(0,8)
+                            .toUpperCase();
+        }
+    }
 }

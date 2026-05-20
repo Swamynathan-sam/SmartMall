@@ -11,16 +11,20 @@ import java.util.List;
 public class ProductResponse {
 
     private Long id;
+    
+    private String productCode;
 
     private String name;
 
     private String description;
 
-    private double price;
+    private Double price;
+    
+    private Integer quantity;
 
     private List<String> images;
 
-    private double averageRating;
+    private Double averageRating;
 
     private String categoryName;
 }

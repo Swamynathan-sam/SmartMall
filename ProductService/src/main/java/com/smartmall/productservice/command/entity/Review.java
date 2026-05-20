@@ -24,6 +24,6 @@ public class Review {
 
     @ManyToOne
     @JoinColumn(name = "product_id")
-    @JsonBackReference
+    @JsonBackReference("product-reviews")
     private Product product;
 }
