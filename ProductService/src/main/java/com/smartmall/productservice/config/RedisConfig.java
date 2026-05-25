@@ -8,8 +8,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.smartmall.productservice.command.entity.Product;
+import com.smartmall.productservice.common.dto.ProductResponse;
 
 @Configuration
 public class RedisConfig {
@@ -21,10 +20,10 @@ public class RedisConfig {
     }
 
     @Bean
-    RedisTemplate<String, Product> redisTemplate(
+    RedisTemplate<String, ProductResponse> redisTemplate(
             RedisConnectionFactory connectionFactory) {
 
-        RedisTemplate<String, Product> template =
+        RedisTemplate<String, ProductResponse> template =
                 new RedisTemplate<>();
 
         template.setConnectionFactory(connectionFactory);

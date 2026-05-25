@@ -1,9 +1,11 @@
 package com.smartmall.productservice.command.service;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.smartmall.productservice.command.entity.Category;
 import com.smartmall.productservice.command.entity.Product;
+import com.smartmall.productservice.command.entity.ProductImage;
 import com.smartmall.productservice.command.entity.Review;
 import com.smartmall.productservice.command.producer.ProductEventProducer;
 import com.smartmall.productservice.command.repository.CategoryRepository;
@@ -13,6 +15,7 @@ import com.smartmall.productservice.common.event.ProductCreatedEvent;
 import com.smartmall.productservice.common.event.ProductUpdatedEvent;
 import com.smartmall.productservice.common.event.ReviewAddedEvent;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -24,6 +27,8 @@ public class ProductCommandService {
     private final CategoryRepository categoryRepository;
 
     private final ProductEventProducer producer;
+    
+    private final FileStorageService fileStorageService;
 
     public Product createProduct(Product product) {
     	
@@ -166,5 +171,33 @@ public class ProductCommandService {
                 .orElseThrow(() ->
                         new RuntimeException(
                                 "Product not found"));
+    }
+    @Transactional
+    public Product addImage(
+            String productCode,
+            MultipartFile file)
+            throws Exception {
+
+        Product product =
+                repository.findByProductCode(productCode)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Product not found"));
+
+        String fileName =
+                fileStorageService.uploadFile(file);
+
+        ProductImage image =
+                new ProductImage();
+
+        image.setImageUrl(
+                "/uploads/products/" +
+                fileName);
+
+        image.setProduct(product);
+
+        product.getImages().add(image);
+
+        return repository.save(product);
     }
 }

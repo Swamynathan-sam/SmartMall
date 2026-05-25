@@ -1,12 +1,17 @@
 package com.smartmall.productservice.query.service;
 
-import java.util.List;
+import java.time.Duration;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
 import com.smartmall.productservice.command.entity.Product;
 import com.smartmall.productservice.command.repository.ProductRepository;
+import com.smartmall.productservice.common.dto.ProductResponse;
+import com.smartmall.productservice.common.mapper.ProductMapper;
+import com.smartmall.productservice.exception.ProductNotFoundException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -14,65 +19,108 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProductQueryService {
 
+    private final RedisTemplate<String, ProductResponse> redisTemplate;
 
-private final RedisTemplate<String, Product> redisTemplate;
+    private final ProductRepository repository;
 
-private final ProductRepository repository;
+    // ---------------- GET BY ID ----------------
 
-public Product getProduct(Long id) {
+    public ProductResponse getProduct(Long id) {
 
-    Object cachedProduct =
-            redisTemplate.opsForValue()
-                    .get("product:" + id);
+        String key = "product:" + id;
 
-    if (cachedProduct != null) {
+        ProductResponse cached =
+                redisTemplate
+                        .opsForValue()
+                        .get(key);
 
-        return (Product) cachedProduct;
+        if (cached != null) {
+            return cached;
+        }
+
+        Product product =
+                repository.findById(id)
+                        .orElseThrow(() ->
+                                new ProductNotFoundException(
+                                        "Product not found"));
+
+        ProductResponse response =
+                ProductMapper.mapToResponse(
+                        product);
+
+        redisTemplate
+                .opsForValue()
+                .set(
+                        key,
+                        response,
+                        Duration.ofMinutes(10));
+
+        return response;
     }
 
-    Product product = repository.findById(id)
-            .orElseThrow(() ->
-                    new RuntimeException(
-                            "Product not found"));
+    // ---------------- GET BY CODE ----------------
 
-    redisTemplate.opsForValue()
-            .set("product:" + id, product);
+    public ProductResponse getProductByCode(
+            String productCode) {
 
-    return product;
-}
+        String key =
+                "productCode:" +
+                productCode;
 
-public Product getProductByCode(
-        String productCode) {
+        ProductResponse cached =
+                redisTemplate
+                        .opsForValue()
+                        .get(key);
 
-    Product cachedProduct =
-            redisTemplate.opsForValue()
-                    .get("productCode:" + productCode);
+        if (cached != null) {
+            return cached;
+        }
 
-    if (cachedProduct != null) {
-        return cachedProduct;
+        ProductResponse response =
+                repository
+                        .findResponseByProductCode(
+                                productCode)
+                        .orElseThrow(() ->
+                                new ProductNotFoundException(
+                                        "Product not found"));
+
+        redisTemplate
+        .opsForValue()
+        .set(
+                key,
+                response,
+                Duration.ofMinutes(10));
+
+        return response;
     }
 
-    Product product =
-            repository.findByProductCode(
-                    productCode)
-            .orElseThrow(() ->
-                    new RuntimeException(
-                            "Product not found"));
+    // ---------------- SEARCH ----------------
 
-    redisTemplate.opsForValue()
-            .set(
-                    "productCode:" + productCode,
-                    product);
+    public Page<ProductResponse> getProductByName(
+            String name,Pageable pageable) {
 
-    return product;
+        return repository
+                .findByNameContainingIgnoreCase(
+                        name,pageable)
+                .map(
+                        ProductMapper::mapToResponse);
+    }
 }
 
-public List<Product> getProductByName(
-        String name) {
-
-    return repository
-            .findByNameContainingIgnoreCase(name);
-}
-
-
-}
+//Query Flow
+//
+//Request
+//↓
+//Query Controller
+//↓
+//Query Service
+//↓
+//Repository
+//↓
+//Page<Product>
+//↓
+//map(ProductMapper::mapToResponse)
+//↓
+//Page<ProductResponse>
+//↓
+//API Response

@@ -10,6 +10,7 @@ import com.smartmall.productservice.common.mapper.ProductMapper;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/commands/products")
@@ -56,5 +57,21 @@ public class ProductCommandController {
 
         return ProductMapper.mapToResponse(
                 product);
+    }
+    
+    @PostMapping("/{productCode}/images")
+    public ProductResponse uploadImage(
+            @PathVariable String productCode,
+            @RequestParam("file")
+            MultipartFile file)
+            throws Exception {
+
+        Product product =
+                service.addImage(
+                        productCode,
+                        file);
+
+        return ProductMapper
+                .mapToResponse(product);
     }
 }
